@@ -1,11 +1,33 @@
-﻿#include <raylib.h>
+﻿#include <iostream>
+#include <raylib.h>
 
-enum class CellState {
-    Empty,
-    Ship,
-    Hit,
-    Miss
-};
+#include "src/Board.h"
+
+void PrintBoard(const Board& board, bool revealShips) {
+    std::cout << "  ";
+    for (int col = 0; col < Board::Size; col++) {
+        std::cout << col << " ";
+    }
+    std::cout << "\n";
+
+    for (int row = 0; row < Board::Size; row++) {
+        std::cout << row << " ";
+        for (int col = 0; col < Board::Size; col++) {
+            CellState cell = board.GetCell(row, col);
+            char symbol = '.';
+
+            switch (cell) {
+            case CellState::Empty: symbol = '.'; break;
+            case CellState::Ship:  symbol = revealShips ? 'S' : '.'; break;
+            case CellState::Hit:   symbol = 'X'; break;
+            case CellState::Miss:  symbol = 'o'; break;
+            }
+
+            std::cout << symbol << " ";
+        }
+        std::cout << "\n";
+    }
+}
 
 int main() {
     InitWindow(800, 600, "let's gooo");
