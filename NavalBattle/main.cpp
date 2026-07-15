@@ -1,6 +1,7 @@
 ﻿#include "raylib.h"
 #include "src/Board.h"
 #include <cstdlib>
+#include <string>
 
 const int BoardSize = 8;
 const int CellSize = 70;
@@ -11,6 +12,8 @@ const int ScreenWidth = (BoardSize * CellSize + LabelMargin) * 2 + BoardGap;
 const int ScreenHeight = BoardSize * CellSize + LabelMargin + 40;
 
 enum class GameState {
+    Welcome,
+    NameEntry,
     Placement,
     PlayerTurn,
     EnemyTurn,
@@ -94,8 +97,11 @@ int main() {
     enemyBoard.PlaceShip(0, 0);
     enemyBoard.PlaceShip(6, 2);
 
-    GameState state = GameState::Placement;
+    GameState state = GameState::Welcome;
     const char* winnerText = "";
+
+    std::string playerName = "";
+    const int MaxNameLength = 12;
 
     int playerOriginX = LabelMargin + 20;
     int playerOriginY = LabelMargin + 40;
@@ -105,6 +111,32 @@ int main() {
 
     while (!WindowShouldClose()) {
         switch (state) {
+        case GameState::Welcome: {
+            if (IsKeyPressed(KEY_ENTER)) {
+                state = GameState::NameEntry;
+            }
+            break;
+        }
+
+        case GameState::NameEntry: {
+            int key = GetCharPressed();
+            while (key > 0) {
+                if (key >= 32 && key <= 125 && playerName.length() < MaxNameLength) {
+                    playerName += (char)key;
+                }
+                key = GetCharPressed();
+            }
+
+            if (IsKeyPressed(KEY_BACKSPACE) && !playerName.empty()) {
+                playerName.pop_back();
+            }
+
+            if (IsKeyPressed(KEY_ENTER) && !playerName.empty()) {
+                state = GameState::Placement;
+            }
+            break;
+        }
+
         case GameState::Placement: {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 Vector2 mouse = GetMousePosition();
@@ -132,7 +164,7 @@ int main() {
                     enemyBoard.Shoot(row, col);
 
                     if (enemyBoard.AllShipsSunk()) {
-                        winnerText = "You win!";
+                        winnerText = TextFormat("%s wins!", playerName.c_str());
                         state = GameState::GameOver;
                     }
                     else {
@@ -163,21 +195,39 @@ int main() {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawGrid(playerBoard, playerOriginX, playerOriginY, true);
-        DrawLabels(playerOriginX, playerOriginY);
-
-        DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false);
-        DrawLabels(enemyOriginX, enemyOriginY);
-
-        const char* statusText = "";
-        switch (state) {
-        case GameState::Placement:  statusText = TextFormat("Place your ships (%d/%d)", placedCount, ShipsToPlace); break;
-        case GameState::PlayerTurn: statusText = "Your turn"; break;
-        case GameState::EnemyTurn:  statusText = "Enemy turn"; break;
-        case GameState::GameOver:   statusText = winnerText; break;
+        if (state == GameState::Welcome) {
+            DrawText("NAVAL BATTLE", ScreenWidth / 2 - 130, ScreenHeight / 2 - 60, 40, DARKBLUE);
+            DrawText("Press ENTER to start", ScreenWidth / 2 - 110, ScreenHeight / 2 + 10, 20, DARKGRAY);
         }
+        else if (state == GameState::NameEntry) {
+            DrawText("Enter your name:", ScreenWidth / 2 - 110, ScreenHeight / 2 - 60, 24, DARKGRAY);
 
-        DrawText(statusText, ScreenWidth / 2 - 80, 5, 20, DARKGRAY);
+            int boxX = ScreenWidth / 2 - 150;
+            int boxY = ScreenHeight / 2 - 10;
+            DrawRectangle(boxX, boxY, 300, 40, RAYWHITE);
+            DrawRectangleLines(boxX, boxY, 300, 40, DARKGRAY);
+            DrawText(playerName.c_str(), boxX + 10, boxY + 10, 20, BLACK);
+
+            DrawText("Press ENTER to confirm", ScreenWidth / 2 - 110, boxY + 60, 18, GRAY);
+        }
+        else {
+            DrawGrid(playerBoard, playerOriginX, playerOriginY, true);
+            DrawLabels(playerOriginX, playerOriginY);
+
+            DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false);
+            DrawLabels(enemyOriginX, enemyOriginY);
+
+            const char* statusText = "";
+            switch (state) {
+            case GameState::Placement:  statusText = TextFormat("Place your ships (%d/%d)", placedCount, ShipsToPlace); break;
+            case GameState::PlayerTurn: statusText = TextFormat("%s's turn", playerName.c_str()); break;
+            case GameState::EnemyTurn:  statusText = "Enemy turn"; break;
+            case GameState::GameOver:   statusText = winnerText; break;
+            default: break;
+            }
+
+            DrawText(statusText, ScreenWidth / 2 - 80, 5, 20, DARKGRAY);
+        }
 
         EndDrawing();
     }
