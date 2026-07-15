@@ -19,9 +19,19 @@ FetchContent_MakeAvailable(raylib)
 
 add_executable(NavalBattle
     "main.cpp"
-    "src/CellState.h" 
-    "src/Board.h" 
+    "src/CellState.h"
+    "src/Constants.h"
+    "src/GameState.h"
+    "src/Board.h"
     "src/Board.cpp"
+    "src/ShipTextures.h"
+    "src/ShipTextures.cpp"
+    "src/InputUtils.h"
+    "src/InputUtils.cpp"
+    "src/AI.h"
+    "src/AI.cpp"
+    "src/Renderer.h"
+    "src/Renderer.cpp"
 )
 
 target_link_libraries(NavalBattle PRIVATE raylib)
