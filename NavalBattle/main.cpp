@@ -161,7 +161,10 @@ int main() {
                 int row, col;
 
                 if (MouseToGrid(mouse, enemyOriginX, enemyOriginY, row, col)) {
-                    enemyBoard.Shoot(row, col);
+                    bool hit = enemyBoard.Shoot(row, col);
+
+                    popupMessage = hit ? "You hit a ship!" : "You missed!";
+                    popupTimer = PopupDuration;
 
                     if (enemyBoard.AllShipsSunk()) {
                         winnerText = TextFormat("%s wins!", playerName.c_str());
