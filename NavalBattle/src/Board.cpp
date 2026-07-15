@@ -25,3 +25,7 @@ bool Board::PlaceShip(int row, int col) {
 
 	return false;
 }
+
+CellState Board::GetCell(int row, int col) const {
+	return grid[row][col];
+}
