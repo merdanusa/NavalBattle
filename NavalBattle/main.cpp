@@ -208,19 +208,27 @@ int main() {
                 int row, col;
 
                 if (MouseToGrid(mouse, enemyOriginX, enemyOriginY, row, col)) {
-                    bool sunk = false;
-                    bool hit = enemyBoard.Shoot(row, col, sunk);
+                    CellState existingCell = enemyBoard.GetCell(row, col);
 
-                    if (sunk) popupMessage = "You sank a ship!";
-                    else popupMessage = hit ? "You hit a ship!" : "You missed!";
-                    popupTimer = PopupDuration;
-
-                    if (enemyBoard.AllShipsSunk()) {
-                        winnerText = TextFormat("%s wins!", playerName.c_str());
-                        state = GameState::GameOver;
+                    if (existingCell == CellState::Hit || existingCell == CellState::Miss) {
+                        popupMessage = "Already shot there!";
+                        popupTimer = PopupDuration;
                     }
                     else {
-                        state = GameState::EnemyTurn;
+                        bool sunk = false;
+                        bool hit = enemyBoard.Shoot(row, col, sunk);
+
+                        if (sunk) popupMessage = "You sank a ship!";
+                        else popupMessage = hit ? "You hit a ship!" : "You missed!";
+                        popupTimer = PopupDuration;
+
+                        if (enemyBoard.AllShipsSunk()) {
+                            winnerText = TextFormat("%s wins!", playerName.c_str());
+                            state = GameState::GameOver;
+                        }
+                        else {
+                            state = GameState::EnemyTurn;
+                        }
                     }
                 }
             }
