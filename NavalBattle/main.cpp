@@ -70,7 +70,7 @@ bool MouseToGrid(Vector2 mouse, int originX, int originY, int& outRow, int& outC
     return true;
 }
 
-void EnemyTakeShot(Board& playerBoard) {
+bool EnemyTakeShot(Board& playerBoard, int& outRow, int& outCol) {
     int row, col;
 
     do {
@@ -79,7 +79,9 @@ void EnemyTakeShot(Board& playerBoard) {
     } while (playerBoard.GetCell(row, col) == CellState::Hit ||
         playerBoard.GetCell(row, col) == CellState::Miss);
 
-    playerBoard.Shoot(row, col);
+    outRow = row;
+    outCol = col;
+    return playerBoard.Shoot(row, col);
 }
 
 int main() {
@@ -102,6 +104,10 @@ int main() {
 
     std::string playerName = "";
     const int MaxNameLength = 12;
+
+    std::string popupMessage = "";
+    float popupTimer = 0.0f;
+    const float PopupDuration = 1.2f;
 
     int playerOriginX = LabelMargin + 20;
     int playerOriginY = LabelMargin + 40;
@@ -179,10 +185,14 @@ int main() {
         }
 
         case GameState::EnemyTurn: {
-            EnemyTakeShot(playerBoard);
+            int hitRow, hitCol;
+            bool hit = EnemyTakeShot(playerBoard, hitRow, hitCol);
+
+            popupMessage = hit ? "AI hit your ship!" : "AI missed!";
+            popupTimer = PopupDuration;
 
             if (playerBoard.AllShipsSunk()) {
-                winnerText = "Enemy wins!";
+                winnerText = "AI wins!";
                 state = GameState::GameOver;
             }
             else {
@@ -196,6 +206,10 @@ int main() {
         }
 
         BeginDrawing();
+        if (popupTimer > 0.0f) {
+            popupTimer -= GetFrameTime();
+        }
+
         ClearBackground(RAYWHITE);
 
         if (state == GameState::Welcome) {
