@@ -141,7 +141,6 @@ void PlaceFleetRandomly(Board& board) {
         }
     }
 }
-
 struct ShipTextures {
     Texture2D horizontal;
     Texture2D vertical;
@@ -149,8 +148,8 @@ struct ShipTextures {
 
 ShipTextures LoadShipTextures(const char* baseName) {
     ShipTextures textures;
-    textures.horizontal = LoadTexture(TextFormat("assets/%s_h.png", baseName));
-    textures.vertical = LoadTexture(TextFormat("assets/%s_v.png", baseName));
+    textures.horizontal = LoadTexture(TextFormat("assets/ships/%s_h.png", baseName));
+    textures.vertical = LoadTexture(TextFormat("assets/ships/%s_v.png", baseName));
     return textures;
 }
 
@@ -361,10 +360,10 @@ int main() {
             int aiTextWidth = MeasureText("AI", 22);
             DrawText("AI", enemyOriginX + BoardSize * CellSize - aiTextWidth, enemyOriginY - 55, 22, MAROON);
 
-            DrawGrid(playerBoard, playerOriginX, playerOriginY, true);
+            DrawGrid(playerBoard, playerOriginX, playerOriginY, true, shipTexturesByIndex, shipQueue);
             DrawLabels(playerOriginX, playerOriginY);
 
-            DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false);
+            DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false, shipTexturesByIndex, shipQueue);
             DrawLabels(enemyOriginX, enemyOriginY);
 
             if (state == GameState::Placement && currentShipIndex < (int)shipQueue.size()) {
