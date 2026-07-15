@@ -12,6 +12,36 @@ const int BoardGap = 60;
 const int ScreenWidth = (BoardSize * CellSize + LabelMargin) * 2 + BoardGap;
 const int ScreenHeight = BoardSize * CellSize + LabelMargin + 40 + 40;
 
+struct ShipTextures {
+    Texture2D horizontal;
+    Texture2D vertical;
+};
+
+ShipTextures LoadShipTextures(const char* baseName) {
+    ShipTextures textures;
+    textures.horizontal = LoadTexture(TextFormat("assets/ships/%s_h.png", baseName));
+    textures.vertical = LoadTexture(TextFormat("assets/ships/%s_v.png", baseName));
+    return textures;
+}
+
+void UnloadShipTextures(ShipTextures& textures) {
+    UnloadTexture(textures.horizontal);
+    UnloadTexture(textures.vertical);
+}
+
+void DrawShipTexture(Texture2D texture, int row, int col, int length, Orientation orientation, int originX, int originY) {
+    int destWidth = (orientation == Orientation::Horizontal) ? length * CellSize : CellSize;
+    int destHeight = (orientation == Orientation::Vertical) ? length * CellSize : CellSize;
+
+    int x = originX + col * CellSize;
+    int y = originY + row * CellSize;
+
+    Rectangle source = { 0, 0, (float)texture.width, (float)texture.height };
+    Rectangle dest = { (float)x, (float)y, (float)destWidth, (float)destHeight };
+
+    DrawTexturePro(texture, source, dest, { 0, 0 }, 0.0f, WHITE);
+}
+
 enum class GameState {
     Welcome,
     NameEntry,
@@ -47,7 +77,7 @@ void DrawGrid(const Board& board, int originX, int originY, bool revealShips,
             bool sunk;
 
             board.GetShipInfo(i, row, col, length, orientation, sunk);
-            if (sunk) continue; 
+            if (sunk) continue;
 
             Texture2D tex = (orientation == Orientation::Horizontal)
                 ? texturesByIndex[i]->horizontal
@@ -70,6 +100,7 @@ void DrawGrid(const Board& board, int originX, int originY, bool revealShips,
         }
     }
 }
+
 void DrawLabels(int originX, int originY) {
     for (int col = 0; col < BoardSize; col++) {
         const char* label = TextFormat("%d", col + 1);
@@ -140,35 +171,6 @@ void PlaceFleetRandomly(Board& board) {
             placed = board.PlaceShip(row, col, length, orientation);
         }
     }
-}
-struct ShipTextures {
-    Texture2D horizontal;
-    Texture2D vertical;
-};
-
-ShipTextures LoadShipTextures(const char* baseName) {
-    ShipTextures textures;
-    textures.horizontal = LoadTexture(TextFormat("assets/ships/%s_h.png", baseName));
-    textures.vertical = LoadTexture(TextFormat("assets/ships/%s_v.png", baseName));
-    return textures;
-}
-
-void UnloadShipTextures(ShipTextures& textures) {
-    UnloadTexture(textures.horizontal);
-    UnloadTexture(textures.vertical);
-}
-
-void DrawShipTexture(Texture2D texture, int row, int col, int length, Orientation orientation, int originX, int originY) {
-    int destWidth = (orientation == Orientation::Horizontal) ? length * CellSize : CellSize;
-    int destHeight = (orientation == Orientation::Vertical) ? length * CellSize : CellSize;
-
-    int x = originX + col * CellSize;
-    int y = originY + row * CellSize;
-
-    Rectangle source = { 0, 0, (float)texture.width, (float)texture.height };
-    Rectangle dest = { (float)x, (float)y, (float)destWidth, (float)destHeight };
-
-    DrawTexturePro(texture, source, dest, { 0, 0 }, 0.0f, WHITE);
 }
 
 int main() {
