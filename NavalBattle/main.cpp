@@ -2,18 +2,34 @@
 
 const int BoardSize = 8;
 const int CellSize = 80;
-const int ScreenWidth = BoardSize * CellSize;
-const int ScreenHeight = BoardSize * CellSize;
+const int LabelMargin = 30;
+const int ScreenWidth = BoardSize * CellSize + LabelMargin;
+const int ScreenHeight = BoardSize * CellSize + LabelMargin;
 
 void DrawGrid() {
     for (int row = 0; row < BoardSize; row++) {
         for (int col = 0; col < BoardSize; col++) {
-            int x = col * CellSize;
-            int y = row * CellSize;
+            int x = col * CellSize + LabelMargin;
+            int y = row * CellSize + LabelMargin;
 
             DrawRectangle(x, y, CellSize, CellSize, RAYWHITE);
             DrawRectangleLines(x, y, CellSize, CellSize, DARKGRAY);
         }
+    }
+}
+
+void DrawLabels() {
+    for (int col = 0; col < BoardSize; col++) {
+        const char* label = TextFormat("%d", col + 1);
+        int x = LabelMargin + col * CellSize + CellSize / 2 - 5;
+        DrawText(label, x, 5, 20, BLACK);
+    }
+
+    for (int row = 0; row < BoardSize; row++) {
+        char letter = 'A' + row;
+        const char* label = TextFormat("%c", letter);
+        int y = LabelMargin + row * CellSize + CellSize / 2 - 10;
+        DrawText(label, 5, y, 20, BLACK);
     }
 }
 
@@ -26,6 +42,7 @@ int main() {
         ClearBackground(RAYWHITE);
 
         DrawGrid();
+        DrawLabels();
 
         EndDrawing();
     }
