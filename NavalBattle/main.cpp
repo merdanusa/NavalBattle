@@ -223,6 +223,9 @@ int main() {
                         bool sunk = false;
                         bool hit = enemyBoard.Shoot(row, col, sunk);
 
+                        playerShots++;
+                        if (hit) playerHits++;
+
                         if (sunk) popupMessage = "You sank a ship!";
                         else popupMessage = hit ? "You hit a ship!" : "You missed!";
                         popupTimer = PopupDuration;
@@ -244,6 +247,9 @@ int main() {
             int hitRow, hitCol;
             bool sunk = false;
             bool hit = EnemyTakeShot(playerBoard, hitRow, hitCol, sunk);
+
+            aiShots++;
+            if (hit) aiHits++;
 
             if (sunk) popupMessage = "AI sank your ship!";
             else popupMessage = hit ? "AI hit your ship!" : "AI missed!";
