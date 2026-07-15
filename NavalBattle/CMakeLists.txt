@@ -19,11 +19,9 @@ FetchContent_MakeAvailable(raylib)
 
 add_executable(NavalBattle
     "main.cpp"
-    "src/CellState.h" "src/Board.h" "src/Board.cpp"
-    "assets/ships/s_h.png"   "assets/ships/s_v.png"
-    "assets/ships/d_h.png"   "assets/ships/d_v.png"
-    "assets/ships/b_h.png"  "assets/ships/b_v.png"
-    "assets/ships/c_h.png"  "assets/ships/c_v.png"
+    "src/CellState.h" 
+    "src/Board.h" 
+    "src/Board.cpp"
 )
 
 target_link_libraries(NavalBattle PRIVATE raylib)
@@ -31,3 +29,9 @@ target_link_libraries(NavalBattle PRIVATE raylib)
 if(WIN32)
     target_link_libraries(NavalBattle PRIVATE winmm)
 endif()
+
+add_custom_command(TARGET NavalBattle POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:NavalBattle>/assets"
+)
