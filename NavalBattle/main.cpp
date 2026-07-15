@@ -206,6 +206,7 @@ int main() {
         }
 
         BeginDrawing();
+
         if (popupTimer > 0.0f) {
             popupTimer -= GetFrameTime();
         }
@@ -228,6 +229,9 @@ int main() {
             DrawText("Press ENTER to confirm", ScreenWidth / 2 - 110, boxY + 60, 18, GRAY);
         }
         else {
+            DrawText(playerName.c_str(), playerOriginX, playerOriginY - 55, 22, DARKBLUE);
+            DrawText("AI", enemyOriginX, enemyOriginY - 55, 22, MAROON);
+
             DrawGrid(playerBoard, playerOriginX, playerOriginY, true);
             DrawLabels(playerOriginX, playerOriginY);
 
@@ -244,6 +248,15 @@ int main() {
             }
 
             DrawText(statusText, ScreenWidth / 2 - 80, 5, 20, DARKGRAY);
+
+            if (popupTimer > 0.0f) {
+                int textWidth = MeasureText(popupMessage.c_str(), 30);
+                int boxX = ScreenWidth / 2 - textWidth / 2 - 20;
+                int boxY = ScreenHeight / 2 - 25;
+
+                DrawRectangle(boxX, boxY, textWidth + 40, 50, Fade(BLACK, 0.75f));
+                DrawText(popupMessage.c_str(), boxX + 20, boxY + 12, 30, RAYWHITE);
+            }
         }
 
         EndDrawing();
