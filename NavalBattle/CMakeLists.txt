@@ -18,9 +18,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(raylib)
 
 add_executable(NavalBattle
-    NavalBattle.cpp
-    NavalBattle.h
-)
+    "main.cpp"
+ "src/CellState.h" "src/Board.h" "src/Board.cpp")
 
 target_link_libraries(NavalBattle PRIVATE raylib)
 
