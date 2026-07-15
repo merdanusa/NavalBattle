@@ -2,6 +2,7 @@
 #include "src/Board.h"
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 const int BoardSize = 8;
 const int CellSize = 70;
@@ -26,15 +27,24 @@ void DrawGrid(const Board& board, int originX, int originY, bool revealShips) {
             int x = originX + col * CellSize;
             int y = originY + row * CellSize;
 
-            Color fillColor = RAYWHITE;
             CellState cell = board.GetCell(row, col);
+            Color fillColor = RAYWHITE;
 
-            if (cell == CellState::Ship)  fillColor = revealShips ? SKYBLUE : RAYWHITE;
-            if (cell == CellState::Hit)   fillColor = RED;
-            if (cell == CellState::Miss)  fillColor = LIGHTGRAY;
+            if (cell == CellState::Ship) fillColor = revealShips ? SKYBLUE : RAYWHITE;
+            if (cell == CellState::Miss) fillColor = LIGHTGRAY;
+            if (cell == CellState::Hit) {
+                bool sunk = board.IsCellPartOfSunkShip(row, col);
+                fillColor = sunk ? RED : (revealShips ? SKYBLUE : RAYWHITE);
+            }
 
             DrawRectangle(x, y, CellSize, CellSize, fillColor);
             DrawRectangleLines(x, y, CellSize, CellSize, DARKGRAY);
+
+            if (cell == CellState::Hit && !board.IsCellPartOfSunkShip(row, col)) {
+                int pad = 16;
+                DrawLineEx({ (float)(x + pad), (float)(y + pad) }, { (float)(x + CellSize - pad), (float)(y + CellSize - pad) }, 3.0f, RED);
+                DrawLineEx({ (float)(x + CellSize - pad), (float)(y + pad) }, { (float)(x + pad), (float)(y + CellSize - pad) }, 3.0f, RED);
+            }
         }
     }
 }
@@ -70,7 +80,7 @@ bool MouseToGrid(Vector2 mouse, int originX, int originY, int& outRow, int& outC
     return true;
 }
 
-bool EnemyTakeShot(Board& playerBoard, int& outRow, int& outCol) {
+bool EnemyTakeShot(Board& playerBoard, int& outRow, int& outCol, bool& outSunk) {
     int row, col;
 
     do {
@@ -81,7 +91,21 @@ bool EnemyTakeShot(Board& playerBoard, int& outRow, int& outCol) {
 
     outRow = row;
     outCol = col;
-    return playerBoard.Shoot(row, col);
+    return playerBoard.Shoot(row, col, outSunk);
+}
+
+void PlaceFleetRandomly(Board& board) {
+    std::vector<int> shipLengths = { 4, 3, 3, 2, 2, 2, 1, 1, 1, 1 };
+
+    for (int length : shipLengths) {
+        bool placed = false;
+        while (!placed) {
+            int row = std::rand() % BoardSize;
+            int col = std::rand() % BoardSize;
+            Orientation orientation = (std::rand() % 2 == 0) ? Orientation::Horizontal : Orientation::Vertical;
+            placed = board.PlaceShip(row, col, length, orientation);
+        }
+    }
 }
 
 int main() {
@@ -91,13 +115,12 @@ int main() {
     Board playerBoard;
     Board enemyBoard;
 
-    const int ShipsToPlace = 4;
-    int placedCount = 0;
+    PlaceFleetRandomly(enemyBoard);
 
-    enemyBoard.PlaceShip(2, 3);
-    enemyBoard.PlaceShip(5, 7);
-    enemyBoard.PlaceShip(0, 0);
-    enemyBoard.PlaceShip(6, 2);
+    std::vector<int> shipQueue = { 4, 3, 3, 2, 2, 2, 1, 1, 1, 1 };
+    const char* shipNames[] = { "Carrier", "Battleship", "Battleship", "Destroyer", "Destroyer", "Destroyer", "Submarine", "Submarine", "Submarine", "Submarine" };
+    int currentShipIndex = 0;
+    Orientation currentOrientation = Orientation::Horizontal;
 
     GameState state = GameState::Welcome;
     const char* winnerText = "";
@@ -144,19 +167,24 @@ int main() {
         }
 
         case GameState::Placement: {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (IsKeyPressed(KEY_R)) {
+                currentOrientation = (currentOrientation == Orientation::Horizontal) ? Orientation::Vertical : Orientation::Horizontal;
+            }
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && currentShipIndex < (int)shipQueue.size()) {
                 Vector2 mouse = GetMousePosition();
                 int row, col;
 
                 if (MouseToGrid(mouse, playerOriginX, playerOriginY, row, col)) {
-                    if (playerBoard.PlaceShip(row, col)) {
-                        placedCount++;
+                    int length = shipQueue[currentShipIndex];
+                    if (playerBoard.PlaceShip(row, col, length, currentOrientation)) {
+                        currentShipIndex++;
                     }
                 }
+            }
 
-                if (placedCount >= ShipsToPlace) {
-                    state = GameState::PlayerTurn;
-                }
+            if (currentShipIndex >= (int)shipQueue.size()) {
+                state = GameState::PlayerTurn;
             }
             break;
         }
@@ -167,9 +195,11 @@ int main() {
                 int row, col;
 
                 if (MouseToGrid(mouse, enemyOriginX, enemyOriginY, row, col)) {
-                    bool hit = enemyBoard.Shoot(row, col);
+                    bool sunk = false;
+                    bool hit = enemyBoard.Shoot(row, col, sunk);
 
-                    popupMessage = hit ? "You hit a ship!" : "You missed!";
+                    if (sunk) popupMessage = "You sank a ship!";
+                    else popupMessage = hit ? "You hit a ship!" : "You missed!";
                     popupTimer = PopupDuration;
 
                     if (enemyBoard.AllShipsSunk()) {
@@ -186,9 +216,11 @@ int main() {
 
         case GameState::EnemyTurn: {
             int hitRow, hitCol;
-            bool hit = EnemyTakeShot(playerBoard, hitRow, hitCol);
+            bool sunk = false;
+            bool hit = EnemyTakeShot(playerBoard, hitRow, hitCol, sunk);
 
-            popupMessage = hit ? "AI hit your ship!" : "AI missed!";
+            if (sunk) popupMessage = "AI sank your ship!";
+            else popupMessage = hit ? "AI hit your ship!" : "AI missed!";
             popupTimer = PopupDuration;
 
             if (playerBoard.AllShipsSunk()) {
@@ -230,7 +262,9 @@ int main() {
         }
         else {
             DrawText(playerName.c_str(), playerOriginX, playerOriginY - 55, 22, DARKBLUE);
-            DrawText("AI", enemyOriginX, enemyOriginY - 55, 22, MAROON);
+
+            int aiTextWidth = MeasureText("AI", 22);
+            DrawText("AI", enemyOriginX + BoardSize * CellSize - aiTextWidth, enemyOriginY - 55, 22, MAROON);
 
             DrawGrid(playerBoard, playerOriginX, playerOriginY, true);
             DrawLabels(playerOriginX, playerOriginY);
@@ -238,16 +272,44 @@ int main() {
             DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false);
             DrawLabels(enemyOriginX, enemyOriginY);
 
+            if (state == GameState::Placement && currentShipIndex < (int)shipQueue.size()) {
+                Vector2 mouse = GetMousePosition();
+                int hoverRow, hoverCol;
+
+                if (MouseToGrid(mouse, playerOriginX, playerOriginY, hoverRow, hoverCol)) {
+                    int length = shipQueue[currentShipIndex];
+                    int dRow = (currentOrientation == Orientation::Vertical) ? 1 : 0;
+                    int dCol = (currentOrientation == Orientation::Horizontal) ? 1 : 0;
+
+                    for (int i = 0; i < length; i++) {
+                        int r = hoverRow + dRow * i;
+                        int c = hoverCol + dCol * i;
+                        if (r >= 0 && r < BoardSize && c >= 0 && c < BoardSize) {
+                            int px = playerOriginX + c * CellSize;
+                            int py = playerOriginY + r * CellSize;
+                            DrawRectangle(px, py, CellSize, CellSize, Fade(YELLOW, 0.4f));
+                        }
+                    }
+                }
+            }
+
             const char* statusText = "";
             switch (state) {
-            case GameState::Placement:  statusText = TextFormat("Place your ships (%d/%d)", placedCount, ShipsToPlace); break;
+            case GameState::Placement:
+                if (currentShipIndex < (int)shipQueue.size()) {
+                    statusText = TextFormat("Place your %s (size %d) - R to rotate", shipNames[currentShipIndex], shipQueue[currentShipIndex]);
+                }
+                else {
+                    statusText = "All ships placed!";
+                }
+                break;
             case GameState::PlayerTurn: statusText = TextFormat("%s's turn", playerName.c_str()); break;
             case GameState::EnemyTurn:  statusText = "Enemy turn"; break;
             case GameState::GameOver:   statusText = winnerText; break;
             default: break;
             }
 
-            DrawText(statusText, ScreenWidth / 2 - 80, 5, 20, DARKGRAY);
+            DrawText(statusText, ScreenWidth / 2 - 140, 5, 20, DARKGRAY);
 
             if (popupTimer > 0.0f) {
                 int textWidth = MeasureText(popupMessage.c_str(), 30);
