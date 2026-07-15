@@ -80,6 +80,19 @@ bool MouseToGrid(Vector2 mouse, int originX, int originY, int& outRow, int& outC
     return true;
 }
 
+bool IsPlacementValid(const Board& board, int row, int col, int length, Orientation orientation) {
+    int dRow = (orientation == Orientation::Vertical) ? 1 : 0;
+    int dCol = (orientation == Orientation::Horizontal) ? 1 : 0;
+
+    for (int i = 0; i < length; i++) {
+        int r = row + dRow * i;
+        int c = col + dCol * i;
+        if (r < 0 || r >= BoardSize || c < 0 || c >= BoardSize) return false;
+        if (board.GetCell(r, c) != CellState::Empty) return false;
+    }
+    return true;
+}
+
 bool EnemyTakeShot(Board& playerBoard, int& outRow, int& outCol, bool& outSunk) {
     int row, col;
 
@@ -278,6 +291,9 @@ int main() {
 
                 if (MouseToGrid(mouse, playerOriginX, playerOriginY, hoverRow, hoverCol)) {
                     int length = shipQueue[currentShipIndex];
+                    bool valid = IsPlacementValid(playerBoard, hoverRow, hoverCol, length, currentOrientation);
+                    Color previewColor = valid ? Fade(YELLOW, 0.4f) : Fade(RED, 0.4f);
+
                     int dRow = (currentOrientation == Orientation::Vertical) ? 1 : 0;
                     int dCol = (currentOrientation == Orientation::Horizontal) ? 1 : 0;
 
@@ -287,7 +303,7 @@ int main() {
                         if (r >= 0 && r < BoardSize && c >= 0 && c < BoardSize) {
                             int px = playerOriginX + c * CellSize;
                             int py = playerOriginY + r * CellSize;
-                            DrawRectangle(px, py, CellSize, CellSize, Fade(YELLOW, 0.4f));
+                            DrawRectangle(px, py, CellSize, CellSize, previewColor);
                         }
                     }
                 }
