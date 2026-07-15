@@ -1,4 +1,5 @@
 ﻿#include "raylib.h"
+#include <iostream>
 
 const int BoardSize = 8;
 const int CellSize = 80;
@@ -33,11 +34,34 @@ void DrawLabels() {
     }
 }
 
+bool MouseToGrid(Vector2 mouse, int& outRow, int& outCol) {
+    if (mouse.x < LabelMargin || mouse.y < LabelMargin) return false;
+
+    int col = (mouse.x - LabelMargin) / CellSize;
+    int row = (mouse.y - LabelMargin) / CellSize;
+
+    if (col < 0 || col >= BoardSize || row < 0 || row >= BoardSize) return false;
+
+    outRow = row;
+    outCol = col;
+    return true;
+}
+
 int main() {
     InitWindow(ScreenWidth, ScreenHeight, "Naval Battle");
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            Vector2 mouse = GetMousePosition();
+            int row, col;
+
+            if (MouseToGrid(mouse, row, col)) {
+                char letter = 'A' + row;
+                std::cout << "Clicked: " << letter << (col + 1) << "\n";
+            }
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
