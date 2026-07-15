@@ -1,5 +1,5 @@
 ﻿#include "raylib.h"
-#include <iostream>
+#include "Board.h"
 
 const int BoardSize = 8;
 const int CellSize = 80;
@@ -7,13 +7,20 @@ const int LabelMargin = 30;
 const int ScreenWidth = BoardSize * CellSize + LabelMargin;
 const int ScreenHeight = BoardSize * CellSize + LabelMargin;
 
-void DrawGrid() {
+void DrawGrid(const Board& board) {
     for (int row = 0; row < BoardSize; row++) {
         for (int col = 0; col < BoardSize; col++) {
             int x = col * CellSize + LabelMargin;
             int y = row * CellSize + LabelMargin;
 
-            DrawRectangle(x, y, CellSize, CellSize, RAYWHITE);
+            Color fillColor = RAYWHITE;
+            CellState cell = board.GetCell(row, col);
+
+            if (cell == CellState::Ship)  fillColor = SKYBLUE;
+            if (cell == CellState::Hit)   fillColor = RED;
+            if (cell == CellState::Miss)  fillColor = LIGHTGRAY;
+
+            DrawRectangle(x, y, CellSize, CellSize, fillColor);
             DrawRectangleLines(x, y, CellSize, CellSize, DARKGRAY);
         }
     }
@@ -51,21 +58,26 @@ int main() {
     InitWindow(ScreenWidth, ScreenHeight, "Naval Battle");
     SetTargetFPS(60);
 
+    Board board;
+    board.PlaceShip(2, 3);
+    board.PlaceShip(2, 4);
+    board.PlaceShip(2, 5);
+    board.PlaceShip(5, 7);
+
     while (!WindowShouldClose()) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse = GetMousePosition();
             int row, col;
 
             if (MouseToGrid(mouse, row, col)) {
-                char letter = 'A' + row;
-                std::cout << "Clicked: " << letter << (col + 1) << "\n";
+                board.Shoot(row, col);
             }
         }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawGrid();
+        DrawGrid(board);
         DrawLabels();
 
         EndDrawing();
