@@ -10,7 +10,7 @@ const int LabelMargin = 30;
 const int BoardGap = 60;
 
 const int ScreenWidth = (BoardSize * CellSize + LabelMargin) * 2 + BoardGap;
-const int ScreenHeight = BoardSize * CellSize + LabelMargin + 40;
+const int ScreenHeight = BoardSize * CellSize + LabelMargin + 40 + 40;
 
 enum class GameState {
     Welcome,
