@@ -151,6 +151,11 @@ int main() {
     int enemyOriginX = playerOriginX + BoardSize * CellSize + BoardGap;
     int enemyOriginY = playerOriginY;
 
+    int playerShots = 0;
+    int playerHits = 0;
+    int aiShots = 0;
+    int aiHits = 0;
+
     while (!WindowShouldClose()) {
         switch (state) {
         case GameState::Welcome: {
