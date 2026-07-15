@@ -12,6 +12,7 @@ public:
 	bool Shoot(int row, int col);
 	CellState GetCell(int row, int col) const;
 	bool IsInBounds(int row, int col) const;
+	bool AllShipsSunk() const;
 private:
 	std::array<std::array<CellState, Size>, Size> grid;
 };
