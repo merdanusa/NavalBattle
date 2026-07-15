@@ -1,5 +1,5 @@
 ﻿#include "raylib.h"
-#include "Board.h"
+#include "src/Board.h"
 
 const int BoardSize = 8;
 const int CellSize = 80;
