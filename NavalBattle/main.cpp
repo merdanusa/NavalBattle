@@ -1,5 +1,6 @@
 ﻿#include "raylib.h"
 #include "src/Board.h"
+#include <cstdlib>
 
 const int BoardSize = 8;
 const int CellSize = 70;
@@ -9,9 +10,11 @@ const int BoardGap = 60;
 const int ScreenWidth = (BoardSize * CellSize + LabelMargin) * 2 + BoardGap;
 const int ScreenHeight = BoardSize * CellSize + LabelMargin + 40;
 
-enum class Turn {
-    Player,
-    Enemy
+enum class GameState {
+    Placement,
+    PlayerTurn,
+    EnemyTurn,
+    GameOver
 };
 
 void DrawGrid(const Board& board, int originX, int originY, bool revealShips) {
@@ -64,6 +67,18 @@ bool MouseToGrid(Vector2 mouse, int originX, int originY, int& outRow, int& outC
     return true;
 }
 
+void EnemyTakeShot(Board& playerBoard) {
+    int row, col;
+
+    do {
+        row = std::rand() % BoardSize;
+        col = std::rand() % BoardSize;
+    } while (playerBoard.GetCell(row, col) == CellState::Hit ||
+        playerBoard.GetCell(row, col) == CellState::Miss);
+
+    playerBoard.Shoot(row, col);
+}
+
 int main() {
     InitWindow(ScreenWidth, ScreenHeight, "Naval Battle");
     SetTargetFPS(60);
@@ -71,13 +86,16 @@ int main() {
     Board playerBoard;
     Board enemyBoard;
 
-    playerBoard.PlaceShip(1, 1);
-    playerBoard.PlaceShip(4, 6);
+    const int ShipsToPlace = 4;
+    int placedCount = 0;
 
     enemyBoard.PlaceShip(2, 3);
     enemyBoard.PlaceShip(5, 7);
+    enemyBoard.PlaceShip(0, 0);
+    enemyBoard.PlaceShip(6, 2);
 
-    Turn turn = Turn::Player;
+    GameState state = GameState::Placement;
+    const char* winnerText = "";
 
     int playerOriginX = LabelMargin + 20;
     int playerOriginY = LabelMargin + 40;
@@ -86,14 +104,60 @@ int main() {
     int enemyOriginY = playerOriginY;
 
     while (!WindowShouldClose()) {
-        if (turn == Turn::Player && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            Vector2 mouse = GetMousePosition();
-            int row, col;
+        switch (state) {
+        case GameState::Placement: {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                Vector2 mouse = GetMousePosition();
+                int row, col;
 
-            if (MouseToGrid(mouse, enemyOriginX, enemyOriginY, row, col)) {
-                enemyBoard.Shoot(row, col);
-                turn = Turn::Enemy;
+                if (MouseToGrid(mouse, playerOriginX, playerOriginY, row, col)) {
+                    if (playerBoard.PlaceShip(row, col)) {
+                        placedCount++;
+                    }
+                }
+
+                if (placedCount >= ShipsToPlace) {
+                    state = GameState::PlayerTurn;
+                }
             }
+            break;
+        }
+
+        case GameState::PlayerTurn: {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                Vector2 mouse = GetMousePosition();
+                int row, col;
+
+                if (MouseToGrid(mouse, enemyOriginX, enemyOriginY, row, col)) {
+                    enemyBoard.Shoot(row, col);
+
+                    if (enemyBoard.AllShipsSunk()) {
+                        winnerText = "You win!";
+                        state = GameState::GameOver;
+                    }
+                    else {
+                        state = GameState::EnemyTurn;
+                    }
+                }
+            }
+            break;
+        }
+
+        case GameState::EnemyTurn: {
+            EnemyTakeShot(playerBoard);
+
+            if (playerBoard.AllShipsSunk()) {
+                winnerText = "Enemy wins!";
+                state = GameState::GameOver;
+            }
+            else {
+                state = GameState::PlayerTurn;
+            }
+            break;
+        }
+
+        case GameState::GameOver:
+            break;
         }
 
         BeginDrawing();
@@ -105,8 +169,15 @@ int main() {
         DrawGrid(enemyBoard, enemyOriginX, enemyOriginY, false);
         DrawLabels(enemyOriginX, enemyOriginY);
 
-        const char* turnText = (turn == Turn::Player) ? "Your turn" : "Enemy turn";
-        DrawText(turnText, ScreenWidth / 2 - 50, 5, 20, DARKGRAY);
+        const char* statusText = "";
+        switch (state) {
+        case GameState::Placement:  statusText = TextFormat("Place your ships (%d/%d)", placedCount, ShipsToPlace); break;
+        case GameState::PlayerTurn: statusText = "Your turn"; break;
+        case GameState::EnemyTurn:  statusText = "Enemy turn"; break;
+        case GameState::GameOver:   statusText = winnerText; break;
+        }
+
+        DrawText(statusText, ScreenWidth / 2 - 80, 5, 20, DARKGRAY);
 
         EndDrawing();
     }
