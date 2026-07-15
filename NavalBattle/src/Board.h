@@ -12,7 +12,11 @@ struct ShipData {
     int totalCells = 0;
     int hitCells = 0;
     bool sunk = false;
+    int startRow = 0;
+    int startCol = 0;
+    Orientation orientation = Orientation::Horizontal;
 };
+
 
 class Board {
 public:
@@ -26,6 +30,8 @@ public:
     bool IsInBounds(int row, int col) const;
     bool IsCellPartOfSunkShip(int row, int col) const;
     bool AllShipsSunk() const;
+    int GetShipCount() const;
+    void GetShipInfo(int index, int& row, int& col, int& length, Orientation& orientation, bool& sunk) const;
 
 private:
     std::array<std::array<CellState, Size>, Size> grid;

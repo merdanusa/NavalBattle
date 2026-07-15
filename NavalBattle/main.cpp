@@ -21,7 +21,9 @@ enum class GameState {
     GameOver
 };
 
-void DrawGrid(const Board& board, int originX, int originY, bool revealShips) {
+void DrawGrid(const Board& board, int originX, int originY, bool revealShips,
+    ShipTextures** texturesByIndex, const std::vector<int>& shipQueue) {
+
     for (int row = 0; row < BoardSize; row++) {
         for (int col = 0; col < BoardSize; col++) {
             int x = originX + col * CellSize;
@@ -30,17 +32,37 @@ void DrawGrid(const Board& board, int originX, int originY, bool revealShips) {
             CellState cell = board.GetCell(row, col);
             Color fillColor = RAYWHITE;
 
-            if (cell == CellState::Ship) fillColor = revealShips ? SKYBLUE : RAYWHITE;
             if (cell == CellState::Miss) fillColor = LIGHTGRAY;
-            if (cell == CellState::Hit) {
-                bool sunk = board.IsCellPartOfSunkShip(row, col);
-                fillColor = sunk ? RED : (revealShips ? SKYBLUE : RAYWHITE);
-            }
+            if (cell == CellState::Hit && board.IsCellPartOfSunkShip(row, col)) fillColor = RED;
 
             DrawRectangle(x, y, CellSize, CellSize, fillColor);
             DrawRectangleLines(x, y, CellSize, CellSize, DARKGRAY);
+        }
+    }
 
+    if (revealShips) {
+        for (int i = 0; i < (int)board.GetShipCount(); i++) {
+            int row, col, length;
+            Orientation orientation;
+            bool sunk;
+
+            board.GetShipInfo(i, row, col, length, orientation, sunk);
+            if (sunk) continue; 
+
+            Texture2D tex = (orientation == Orientation::Horizontal)
+                ? texturesByIndex[i]->horizontal
+                : texturesByIndex[i]->vertical;
+
+            DrawShipTexture(tex, row, col, length, orientation, originX, originY);
+        }
+    }
+
+    for (int row = 0; row < BoardSize; row++) {
+        for (int col = 0; col < BoardSize; col++) {
+            CellState cell = board.GetCell(row, col);
             if (cell == CellState::Hit && !board.IsCellPartOfSunkShip(row, col)) {
+                int x = originX + col * CellSize;
+                int y = originY + row * CellSize;
                 int pad = 16;
                 DrawLineEx({ (float)(x + pad), (float)(y + pad) }, { (float)(x + CellSize - pad), (float)(y + CellSize - pad) }, 3.0f, RED);
                 DrawLineEx({ (float)(x + CellSize - pad), (float)(y + pad) }, { (float)(x + pad), (float)(y + CellSize - pad) }, 3.0f, RED);
@@ -48,7 +70,6 @@ void DrawGrid(const Board& board, int originX, int originY, bool revealShips) {
         }
     }
 }
-
 void DrawLabels(int originX, int originY) {
     for (int col = 0; col < BoardSize; col++) {
         const char* label = TextFormat("%d", col + 1);
@@ -121,8 +142,50 @@ void PlaceFleetRandomly(Board& board) {
     }
 }
 
+struct ShipTextures {
+    Texture2D horizontal;
+    Texture2D vertical;
+};
+
+ShipTextures LoadShipTextures(const char* baseName) {
+    ShipTextures textures;
+    textures.horizontal = LoadTexture(TextFormat("assets/%s_h.png", baseName));
+    textures.vertical = LoadTexture(TextFormat("assets/%s_v.png", baseName));
+    return textures;
+}
+
+void UnloadShipTextures(ShipTextures& textures) {
+    UnloadTexture(textures.horizontal);
+    UnloadTexture(textures.vertical);
+}
+
+void DrawShipTexture(Texture2D texture, int row, int col, int length, Orientation orientation, int originX, int originY) {
+    int destWidth = (orientation == Orientation::Horizontal) ? length * CellSize : CellSize;
+    int destHeight = (orientation == Orientation::Vertical) ? length * CellSize : CellSize;
+
+    int x = originX + col * CellSize;
+    int y = originY + row * CellSize;
+
+    Rectangle source = { 0, 0, (float)texture.width, (float)texture.height };
+    Rectangle dest = { (float)x, (float)y, (float)destWidth, (float)destHeight };
+
+    DrawTexturePro(texture, source, dest, { 0, 0 }, 0.0f, WHITE);
+}
+
 int main() {
     InitWindow(ScreenWidth, ScreenHeight, "Naval Battle");
+
+    ShipTextures subTextures = LoadShipTextures("s");
+    ShipTextures desTextures = LoadShipTextures("d");
+    ShipTextures batTextures = LoadShipTextures("b");
+    ShipTextures carTextures = LoadShipTextures("c");
+
+    ShipTextures* shipTexturesByIndex[] = {
+        &carTextures, &batTextures, &batTextures,
+        &desTextures, &desTextures, &desTextures,
+        &subTextures, &subTextures, &subTextures, &subTextures
+    };
+
     SetTargetFPS(60);
 
     Board playerBoard;
@@ -311,7 +374,16 @@ int main() {
                 if (MouseToGrid(mouse, playerOriginX, playerOriginY, hoverRow, hoverCol)) {
                     int length = shipQueue[currentShipIndex];
                     bool valid = IsPlacementValid(playerBoard, hoverRow, hoverCol, length, currentOrientation);
-                    Color previewColor = valid ? Fade(YELLOW, 0.4f) : Fade(RED, 0.4f);
+
+                    Texture2D previewTexture = (currentOrientation == Orientation::Horizontal)
+                        ? shipTexturesByIndex[currentShipIndex]->horizontal
+                        : shipTexturesByIndex[currentShipIndex]->vertical;
+
+                    if (valid) {
+                        DrawShipTexture(previewTexture, hoverRow, hoverCol, length, currentOrientation, playerOriginX, playerOriginY);
+                    }
+
+                    Color previewColor = valid ? Fade(YELLOW, 0.25f) : Fade(RED, 0.45f);
 
                     int dRow = (currentOrientation == Orientation::Vertical) ? 1 : 0;
                     int dCol = (currentOrientation == Orientation::Horizontal) ? 1 : 0;
@@ -366,6 +438,11 @@ int main() {
 
         EndDrawing();
     }
+
+    UnloadShipTextures(subTextures);
+    UnloadShipTextures(desTextures);
+    UnloadShipTextures(batTextures);
+    UnloadShipTextures(carTextures);
 
     CloseWindow();
     return 0;

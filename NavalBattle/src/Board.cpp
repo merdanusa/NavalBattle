@@ -21,7 +21,7 @@ bool Board::PlaceShip(int row, int col, int length, Orientation orientation) {
     }
 
     int newShipId = (int)ships.size();
-    ships.push_back({ length, 0, false });
+    ships.push_back({ length, 0, false, row, col, orientation });
 
     for (int i = 0; i < length; i++) {
         int r = row + dRow * i;
@@ -73,4 +73,18 @@ bool Board::AllShipsSunk() const {
         if (!ship.sunk) return false;
     }
     return true;
+}
+
+
+int Board::GetShipCount() const {
+    return (int)ships.size();
+}
+
+void Board::GetShipInfo(int index, int& row, int& col, int& length, Orientation& orientation, bool& sunk) const {
+    const ShipData& s = ships[index];
+    row = s.startRow;
+    col = s.startCol;
+    length = s.totalCells;
+    orientation = s.orientation;
+    sunk = s.sunk;
 }
