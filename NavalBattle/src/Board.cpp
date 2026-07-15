@@ -33,6 +33,15 @@ bool Board::Shoot(int row, int col) {
     return false;
 }
 
+bool Board::AllShipsSunk() const {
+    for (const auto& row : grid) {
+        for (CellState cell : row) {
+            if (cell == CellState::Ship) return false;
+        }
+    }
+    return true;
+}
+
 CellState Board::GetCell(int row, int col) const {
     return grid[row][col];
 }
