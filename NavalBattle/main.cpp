@@ -349,10 +349,10 @@ int main() {
             const char* playerStats = TextFormat("%s: %d shots, %d hits", playerName.c_str(), playerShots, playerHits);
             const char* aiStats = TextFormat("AI: %d shots, %d hits", aiShots, aiHits);
 
-            DrawText(playerStats, playerOriginX, ScreenHeight - 25, 18, DARKGRAY);
+            DrawText(playerStats, playerOriginX, ScreenHeight - 30, 18, DARKGRAY);
 
             int aiStatsWidth = MeasureText(aiStats, 18);
-            DrawText(aiStats, enemyOriginX + BoardSize * CellSize - aiStatsWidth, ScreenHeight - 25, 18, DARKGRAY);
+            DrawText(aiStats, enemyOriginX + BoardSize * CellSize - aiStatsWidth, ScreenHeight - 30, 18, DARKGRAY);
 
             if (popupTimer > 0.0f) {
                 int textWidth = MeasureText(popupMessage.c_str(), 30);
