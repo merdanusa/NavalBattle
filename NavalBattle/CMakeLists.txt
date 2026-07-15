@@ -19,7 +19,12 @@ FetchContent_MakeAvailable(raylib)
 
 add_executable(NavalBattle
     "main.cpp"
- "src/CellState.h" "src/Board.h" "src/Board.cpp")
+    "src/CellState.h" "src/Board.h" "src/Board.cpp"
+    "assets/ships/s_h.png"   "assets/ships/s_v.png"
+    "assets/ships/d_h.png"   "assets/ships/d_v.png"
+    "assets/ships/b_h.png"  "assets/ships/b_v.png"
+    "assets/ships/c_h.png"  "assets/ships/c_v.png"
+)
 
 target_link_libraries(NavalBattle PRIVATE raylib)
 
